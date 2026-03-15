@@ -1,0 +1,7 @@
+{
+  "name": "Pretoria Hidden Gems",
+  "description": "A discovery platform for hidden restaurants, activities, and secret places in Pretoria, South Africa.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
