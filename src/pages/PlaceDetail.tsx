@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { 
@@ -13,53 +13,43 @@ import {
   ChevronLeft,
   Info,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { Place } from '../types';
 import { motion } from 'motion/react';
-
-// Mock data for a single place
-const MOCK_PLACE: Place = {
-  id: '1',
-  name: 'Faerie Glen Nature Reserve',
-  slug: 'faerie-glen-nature-reserve',
-  category: 'Outdoor & Nature',
-  suburb: 'Faerie Glen',
-  area: 'Pretoria East',
-  price_type: 'Free',
-  description: 'Faerie Glen Nature Reserve is a hidden sanctuary in the middle of Pretoria East. Part of the Bronberg Conservation Area, it offers several hiking trails that wind through grasslands and along the Moreleta Spruit.',
-  why_go: 'It is one of the few places in Pretoria where you can truly feel like you are out in the wild without leaving the city. The views from the top of the ridge are spectacular, especially at sunset.',
-  best_for: 'Morning hikes, bird watching, and photography. It is also dog-friendly (on a leash).',
-  address: 'January Masilela Dr, Faerie Glen, Pretoria, 0081',
-  latitude: -25.7744,
-  longitude: 28.2919,
-  website_url: 'https://www.tshwane.gov.za',
-  phone: '012 358 1510',
-  opening_hours: {
-    'Monday - Sunday': '06:00 - 18:00'
-  },
-  hero_image: 'https://picsum.photos/seed/faerie/1200/800',
-  gallery_images: [
-    'https://picsum.photos/seed/faerie1/800/600',
-    'https://picsum.photos/seed/faerie2/800/600',
-    'https://picsum.photos/seed/faerie3/800/600'
-  ],
-  tags: ['Hiking', 'Nature', 'Dog Friendly', 'Views'],
-  is_featured: true,
-  rating: 4.8,
-  created_at: '',
-  updated_at: ''
-};
+import { supabase } from '../lib/supabase';
 
 export const PlaceDetail = () => {
-  const { slug } = useParams();
-  const [isSaved, setIsSaved] = React.useState(false);
-  
-  // In a real app, we would fetch the place by slug from Supabase
-  const place = MOCK_PLACE;
+  const { slug } = useParams<{ slug: string }>();
+  const [place, setPlace] = useState<Place | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    const fetchPlace = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('places')
+          .select('*')
+          .eq('slug', slug)
+          .single();
+        
+        if (error) throw error;
+        if (data) setPlace(data);
+      } catch (err) {
+        console.error('Error fetching place details:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (slug) fetchPlace();
+  }, [slug]);
 
   const handleShare = () => {
-    if (navigator.share) {
+    if (place && navigator.share) {
       navigator.share({
         title: place.name,
         text: place.description,
@@ -67,6 +57,31 @@ export const PlaceDetail = () => {
       });
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] py-20">
+          <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mb-4" />
+          <p className="text-zinc-500 font-medium">Loading hidden gem...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!place) {
+    return (
+      <Layout title="Place Not Found">
+        <div className="max-w-7xl mx-auto px-4 py-32 text-center">
+          <h1 className="text-4xl font-bold text-zinc-900 mb-4">Gem Not Found</h1>
+          <p className="text-zinc-500 mb-8">We couldn't find the place you're looking for.</p>
+          <Link to="/" className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors">
+            Back to Home
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title={place.name} description={place.description}>
@@ -149,34 +164,61 @@ export const PlaceDetail = () => {
               </div>
             </div>
 
-            <section>
-              <h2 className="text-2xl font-bold text-zinc-900 mb-6">Gallery</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {place.gallery_images.map((img, i) => (
-                  <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-zinc-100">
-                    <img src={img} alt={`${place.name} ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                ))}
-              </div>
-            </section>
+            {place.gallery_images && place.gallery_images.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold text-zinc-900 mb-6">Gallery</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {place.gallery_images.map((img, i) => (
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-zinc-100">
+                      <img src={img} alt={`${place.name} ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section>
               <h2 className="text-2xl font-bold text-zinc-900 mb-6">Location</h2>
-              <div className="w-full h-[400px] rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 relative">
-                <iframe
-                  title="Google Maps"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  style={{ border: 0 }}
-                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY'}&q=${encodeURIComponent(place.address)}`}
-                  allowFullScreen
-                ></iframe>
-                {!import.meta.env.VITE_GOOGLE_MAPS_API_KEY && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 text-zinc-400 text-sm p-8 text-center">
-                    Google Maps API Key required for live map. Showing placeholder for {place.address}.
-                  </div>
-                )}
+              <div className="w-full h-[400px] rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 relative group">
+                {(() => {
+                  const mapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+                  const isMapsDisabled = !mapsKey || mapsKey === 'demo' || mapsKey === 'disabled' || mapsKey === 'YOUR_API_KEY';
+                  
+                  if (isMapsDisabled) {
+                    return (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 p-8 text-center">
+                        <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <MapPin className="w-8 h-8 text-zinc-300" />
+                        </div>
+                        <h3 className="text-lg font-bold text-zinc-900 mb-2">Map Preview</h3>
+                        <p className="text-zinc-500 text-sm max-w-xs mb-6">
+                          Live interactive maps are currently disabled. You can view this location directly on Google Maps.
+                        </p>
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-zinc-900 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 hover:bg-zinc-800 transition-colors"
+                        >
+                          <Navigation className="w-4 h-4" />
+                          <span>Open in Google Maps</span>
+                        </a>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <iframe
+                      title="Google Maps"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      src={`https://www.google.com/maps/embed/v1/place?key=${mapsKey}&q=${encodeURIComponent(place.address)}`}
+                      allowFullScreen
+                    ></iframe>
+                  );
+                })()}
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-zinc-500 text-sm flex items-center space-x-2">
@@ -207,7 +249,7 @@ export const PlaceDetail = () => {
                       <Clock className="w-5 h-5 text-emerald-600 mt-0.5" />
                       <div>
                         <p className="text-sm font-bold text-zinc-900">Opening Hours</p>
-                        {Object.entries(place.opening_hours).map(([days, hours]) => (
+                        {place.opening_hours && Object.entries(place.opening_hours).map(([days, hours]) => (
                           <p key={days} className="text-sm text-zinc-500">{days}: {hours}</p>
                         ))}
                       </div>

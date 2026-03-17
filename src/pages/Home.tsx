@@ -1,62 +1,52 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { SearchBar } from '../components/SearchBar';
 import { PlaceCard } from '../components/PlaceCard';
 import { motion } from 'motion/react';
-import { Utensils, Coffee, Trees, Sparkles, ShoppingBag, Heart, ArrowRight } from 'lucide-react';
+import { Utensils, Coffee, Trees, PartyPopper, ShoppingBag, Heart, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Place } from '../types';
+import { supabase } from '../lib/supabase';
 
 const CATEGORIES = [
   { name: 'Restaurants', icon: Utensils, color: 'bg-orange-100 text-orange-600' },
   { name: 'Coffee Shops', icon: Coffee, color: 'bg-amber-100 text-amber-600' },
   { name: 'Outdoor & Nature', icon: Trees, color: 'bg-emerald-100 text-emerald-600' },
-  { name: 'Fun Activities', icon: Sparkles, color: 'bg-purple-100 text-purple-600' },
+  { name: 'Fun Activities', icon: PartyPopper, color: 'bg-purple-100 text-purple-600' },
   { name: 'Markets', icon: ShoppingBag, color: 'bg-blue-100 text-blue-600' },
   { name: 'Date Ideas', icon: Heart, color: 'bg-rose-100 text-rose-600' },
 ];
 
-const MOCK_FEATURED: Partial<Place>[] = [
-  {
-    id: '1',
-    name: 'Faerie Glen Nature Reserve',
-    slug: 'faerie-glen-nature-reserve',
-    suburb: 'Faerie Glen',
-    price_type: 'Free',
-    hero_image: 'https://picsum.photos/seed/faerie/800/600',
-    description: 'A beautiful escape in the heart of the city with hiking trails and scenic views.',
-    rating: 4.8,
-    tags: ['Hiking', 'Nature'],
-  },
-  {
-    id: '2',
-    name: 'Hazel Food Market',
-    slug: 'hazel-food-market',
-    suburb: 'Menlo Park',
-    price_type: 'Under R100',
-    hero_image: 'https://picsum.photos/seed/market/800/600',
-    description: 'The best Saturday morning market for fresh produce and artisanal food.',
-    rating: 4.9,
-    tags: ['Food', 'Market'],
-  },
-  {
-    id: '3',
-    name: 'Afroboer',
-    slug: 'afroboer',
-    suburb: 'Die Wilgers',
-    price_type: 'Under R250',
-    hero_image: 'https://picsum.photos/seed/cafe/800/600',
-    description: 'A quirky bakery and cafe with a beautiful garden and incredible breakfast.',
-    rating: 4.7,
-    tags: ['Cafe', 'Breakfast'],
-  }
-];
-
 export const Home = () => {
+  const [featuredPlaces, setFeaturedPlaces] = useState<Place[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('places')
+          .select('*')
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(6);
+        
+        if (error) throw error;
+        if (data) setFeaturedPlaces(data);
+      } catch (err) {
+        console.error('Error fetching featured places:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeatured();
+  }, []);
+
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center justify-center overflow-hidden">
+      {/* 2. Hero Section */}
+      <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src="https://picsum.photos/seed/pretoria/1920/1080"
@@ -79,14 +69,19 @@ export const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-zinc-200 mb-12 max-w-2xl mx-auto"
+            className="text-xl text-zinc-200 max-w-2xl mx-auto"
           >
             Find restaurants, activities, markets and secret places locals love.
           </motion.p>
-          
+        </div>
+      </section>
+
+      {/* 3. Search Section */}
+      <section className="relative z-20 -mt-10 mb-8">
+        <div className="max-w-4xl mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             <SearchBar variant="hero" />
@@ -94,113 +89,81 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* Placeholder Ad */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="w-full h-24 bg-zinc-50 border border-zinc-100 rounded-xl flex items-center justify-center text-zinc-400 text-xs uppercase tracking-widest">
-          Advertisement
-        </div>
-      </div>
-
-      {/* Browse by Category */}
-      <section className="py-20 bg-white">
+      {/* 4 & 5. Hidden Gems of the Week + Featured Cards */}
+      <section className="py-10 bg-zinc-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-end mb-12">
+          <div className="flex justify-between items-end mb-6">
             <div>
-              <h2 className="text-3xl font-bold text-zinc-900 mb-2">Browse by Category</h2>
-              <p className="text-zinc-500">What are you in the mood for today?</p>
+              <h2 className="text-xl md:text-3xl font-bold text-zinc-900 mb-1">Hidden Gems of the Week</h2>
+              <p className="text-xs text-zinc-500">Hand-picked secret spots you shouldn't miss.</p>
             </div>
+            <Link to="/search" className="flex items-center space-x-2 text-emerald-600 text-xs font-semibold hover:underline">
+              <span>View all</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-64 bg-zinc-200 animate-pulse rounded-2xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {featuredPlaces.map((place) => (
+                <PlaceCard key={place.id} place={place} />
+              ))}
+              {featuredPlaces.length === 0 && (
+                <div className="col-span-full py-8 text-center">
+                  <p className="text-zinc-400">No featured gems found yet. Check back soon!</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 6. Category Section */}
+      <section className="py-10 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-zinc-900 mb-1">Browse by Category</h2>
+            <p className="text-xs text-zinc-500">What are you in the mood for today?</p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {CATEGORIES.map((cat) => (
               <Link
                 key={cat.name}
                 to={`/categories/${cat.name}`}
-                className="group p-6 rounded-2xl bg-zinc-50 hover:bg-white hover:shadow-xl hover:shadow-emerald-500/5 transition-all text-center border border-transparent hover:border-emerald-100"
+                className="group flex flex-col items-center p-4 rounded-2xl bg-zinc-50 hover:bg-white hover:shadow-xl hover:shadow-emerald-500/5 transition-all text-center border border-transparent hover:border-emerald-100"
               >
-                <div className={`w-12 h-12 ${cat.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
-                  <cat.icon className="w-6 h-6" />
+                <div className={`w-10 h-10 ${cat.color} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                  <cat.icon className="w-5 h-5" />
                 </div>
-                <span className="font-semibold text-zinc-900 text-sm">{cat.name}</span>
+                <span className="font-bold text-zinc-900 text-[11px] uppercase tracking-wider">{cat.name}</span>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Featured Gems */}
-      <section className="py-20 bg-zinc-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl font-bold text-zinc-900 mb-2">Hidden Gems of the Week</h2>
-              <p className="text-zinc-500">Hand-picked secret spots you shouldn't miss.</p>
-            </div>
-            <Link to="/search" className="flex items-center space-x-2 text-emerald-600 font-semibold hover:underline">
-              <span>View all</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {MOCK_FEATURED.map((place) => (
-              <PlaceCard key={place.id} place={place as Place} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Budget Filters */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-zinc-900 mb-12 text-center">Explore by Budget</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { label: 'Free things to do', color: 'bg-emerald-600', query: 'Free' },
-              { label: 'Under R100', color: 'bg-zinc-900', query: 'Under R100' },
-              { label: 'Under R250', color: 'bg-amber-600', query: 'Under R250' },
-            ].map((budget) => (
-              <Link
-                key={budget.label}
-                to={`/search?budget=${budget.query}`}
-                className={`${budget.color} p-8 rounded-2xl text-white hover:scale-[1.02] transition-transform flex flex-col justify-between h-48`}
-              >
-                <span className="text-2xl font-bold">{budget.label}</span>
-                <div className="flex items-center space-x-2 text-sm font-medium opacity-80">
-                  <span>Explore</span>
-                  <ArrowRight className="w-4 h-4" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="py-20">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="bg-emerald-900 rounded-[2rem] p-12 md:p-20 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-              <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-400 rounded-full blur-[100px]" />
-              <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-400 rounded-full blur-[100px]" />
-            </div>
-            
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Never miss a hidden gem.</h2>
-            <p className="text-emerald-100/80 text-lg mb-10 max-w-xl mx-auto">
-              Join 5,000+ Pretoria locals who get our weekly guide to the best secret spots.
-            </p>
-            
-            <form className="flex flex-col md:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="flex-grow bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-white placeholder:text-emerald-200/50 focus:ring-2 focus:ring-emerald-400 outline-none"
-              />
-              <button className="bg-white text-emerald-900 px-8 py-4 rounded-xl font-bold hover:bg-emerald-50 transition-colors">
-                Subscribe
-              </button>
-            </form>
-          </div>
+      {/* 7. Optional small newsletter section */}
+      <section className="py-12 bg-emerald-600">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-xl md:text-3xl font-bold text-white mb-3">Never miss a hidden gem</h2>
+          <p className="text-sm text-emerald-100 mb-6">Join 5,000+ Pretoria locals who get our weekly secret spot recommendations.</p>
+          <form className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Your email address"
+              className="flex-grow px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
+            />
+            <button className="bg-zinc-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-zinc-800 transition-colors text-sm">
+              Subscribe
+            </button>
+          </form>
         </div>
       </section>
     </Layout>

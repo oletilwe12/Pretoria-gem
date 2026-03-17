@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { PlaceCard } from '../components/PlaceCard';
 import { supabase } from '../lib/supabase';

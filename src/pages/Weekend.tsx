@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout } from '../components/Layout';
 import { PlaceCard } from '../components/PlaceCard';
-import { Calendar, MapPin, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Star } from 'lucide-react';
 
 export const Weekend = () => {
   return (
@@ -30,7 +30,7 @@ export const Weekend = () => {
           <div className="lg:col-span-2 space-y-12">
             <section>
               <h2 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center space-x-3">
-                <Sparkles className="w-6 h-6 text-emerald-600" />
+                <Star className="w-6 h-6 text-emerald-600" />
                 <span>Top Picks for Saturday</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -58,7 +58,7 @@ export const Weekend = () => {
 
             <section>
               <h2 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center space-x-3">
-                <Sparkles className="w-6 h-6 text-emerald-600" />
+                <Star className="w-6 h-6 text-emerald-600" />
                 <span>Sunday Chill Spots</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
